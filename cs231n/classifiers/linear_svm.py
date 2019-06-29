@@ -77,13 +77,15 @@ def svm_loss_vectorized(W, X, y, reg):
     # result in loss.                                                           #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    num_train = X.shape[0]
     num_classes = W.shape[1]
     scores = X.dot(W)
-    correct_class_score = np.tile(scores[np.arange(len(y)),y],num_classes).reshape(scores.shape)
-    margin = np.maximum(0,scores - correct_class_score + 1)
+    yi_scores = scores[np.arange(scores.shape[0]),y] 
+    margin = np.maximum(0,scores - np.matrix(yi_scores).T + 1)
     margin[np.arange(len(y)),y] = 0
     loss = np.mean(np.sum(margin,axis=1))
-    loss += reg * np.sum(W * W)
+    loss += 0.5*reg * np.sum(W * W)
+    
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
     #############################################################################
@@ -97,8 +99,13 @@ def svm_loss_vectorized(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    print(np.where(margin>0))
-
+    binary = margin
+    binary[margin > 0] = 1
+    row_sum = np.sum(binary, axis=1)
+    binary[np.arange(num_train), y] = -row_sum.T
+    dW = np.dot(X.T,binary)
+    dW /= num_train
+    dW += reg*2*W
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
     return loss, dW
